@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/trade.js": {
+      "memory": 1024
+    }
+  }
+}

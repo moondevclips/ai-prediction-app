@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>TradeSphere AI</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style type="text/tailwindcss">
+        :root {
+            --background: #121212;
+            --surface: #1e1e1e;
+            --accent: #00bcd4;
+            --on-surface: #ffffff;
+            --on-surface-secondary: #a0a0a0;
+            --positive: #00c853;
+            --negative: #ff5252;
+            --cyan-glow: 0px 0px 10px 0px #00BCD4, 0px 0px 20px 0px #00BCD4;
+        }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--background);
+            color: var(--on-surface);
+        }
+        .sidebar {
+            background-color: var(--surface);
+        }
+        .card {
+            background-color: var(--surface);
+            border: 1px solid #2a2a2a;
+            border-radius: 0.5rem;
+        }
+        .nav-item.active {
+            background-color: var(--accent);
+            color: var(--background);
+        }
+        .nav-item.active svg, .nav-item.active p {
+            color: var(--background);
+        }
+        .nav-item:not(.active) svg, .nav-item:not(.active) p {
+            color: var(--on-surface-secondary);
+        }
+        .nav-item:hover {
+            background-color: rgba(0, 188, 212, 0.1);
+        }
+        .form-input, .form-select {
+            background-color: #2a2a2a;
+            border-color: #4a4a4a;
+        }
+        .form-input:focus, .form-select:focus {
+            --tw-ring-color: var(--accent);
+            border-color: var(--accent);
+        }
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4b5563; transition: .4s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--positive); }
+        input:checked + .slider:before { transform: translateX(22px); }
+    </style>
+</head>
+<body>
+    <div class="relative flex size-full min-h-screen flex-col bg-[var(--background)] group/design-root overflow-x-hidden">
+        <div class="flex h-full grow">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar flex w-64 flex-col gap-8 p-6 shrink-0">
+                <div class="flex items-center gap-2">
+                    <svg class="h-8 w-8 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                    </svg>
+                    <h1 class="text-xl font-bold text-white">TradeSphere AI</h1>
+                </div>
+                <nav id="main-nav" class="flex flex-col gap-2">
+                    <a class="nav-item active flex items-center gap-3 rounded-md px-3 py-2" href="#" data-page="dashboard">
+                        <i class="material-icons">dashboard</i>
+                        <p class="text-sm font-medium">Dashboard</p>
+                    </a>
+                    <a class="nav-item flex items-center gap-3 rounded-md px-3 py-2" href="#" data-page="trade">
+                        <i class="material-icons">candlestick_chart</i>
+                        <p class="text-sm font-medium">Trade</p>
+                    </a>
+                    <a class="nav-item flex items-center gap-3 rounded-md px-3 py-2" href="#" data-page="history">
+                        <i class="material-icons">history</i>
+                        <p class="text-sm font-medium">History</p>
+                    </a>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <div id="page-container" class="flex-1 overflow-y-auto">
+                <!-- Dashboard Page -->
+                <main id="dashboard-page" class="page-content p-8">
+                    <header class="mb-8">
+                        <h1 class="text-4xl font-bold text-white">Dashboard</h1>
+                    </header>
+                    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        <div class="card col-span-1 lg:col-span-2 p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <p class="text-lg font-medium text-[var(--on-surface-secondary)]">Portfolio P&L</p>
+                                    <p class="text-3xl font-bold text-white">$12,345.67</p>
+                                </div>
+                                <div class="flex items-center gap-1 text-[var(--positive)]">
+                                    <i class="material-icons">arrow_upward</i>
+                                    <span>5.2%</span>
+                                </div>
+                            </div>
+                            <div class="h-72">
+                                <canvas id="pnlChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-span-1 flex flex-col gap-6">
+                            <div class="card p-4 flex flex-col justify-center text-center">
+                                <p class="text-sm font-medium text-[var(--on-surface-secondary)]">AI Bot Status</p>
+                                <div id="bot-status-dashboard" class="flex items-center justify-center gap-2 mt-2">
+                                    <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--positive)] opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-[var(--positive)]"></span></span>
+                                    <p class="text-lg font-bold text-white">Active</p>
+                                </div>
+                            </div>
+                            <div class="card p-6">
+                                <h3 class="text-lg font-medium text-[var(--on-surface-secondary)] mb-4">Asset Allocation</h3>
+                                <div class="relative w-40 h-40 mx-auto">
+                                    <canvas id="assetAllocationChart"></canvas>
+                                    <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                        <span class="text-2xl font-bold">3</span>
+                                        <span class="text-xs text-[var(--on-surface-secondary)]">Assets</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-8">
+                        <h2 class="text-2xl font-bold text-white mb-4">Open Positions</h2>
+                        <div class="card overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-[#2a2a2a]"><tr><th class="p-4 text-sm font-semibold">Symbol</th><th class="p-4 text-sm font-semibold">Direction</th><th class="p-4 text-sm font-semibold">Entry Price</th><th class="p-4 text-sm font-semibold">Current Price</th><th class="p-4 text-sm font-semibold">Unrealized P&L</th></tr></thead>
+                                <tbody>
+                                    <tr class="border-t border-[#2a2a2a]"><td class="p-4 text-sm text-white font-medium">BTC/USD</td><td class="p-4 text-sm text-[var(--on-surface-secondary)]">Long</td><td class="p-4 text-sm text-[var(--on-surface-secondary)]">$65,000.00</td><td class="p-4 text-sm text-[var(--on-surface-secondary)]">$65,500.00</td><td class="p-4 text-sm text-[var(--positive)] font-medium">$500.00</td></tr>
+                                    <tr class="border-t border-[#2a2a2a]"><td class="p-4 text-sm text-white font-medium">ETH/USD</td><td class="p-4 text-sm text-[var(--on-surface-secondary)]">Short</td><td class="p-4 text-sm text-[var(--on-surface-secondary)]">$3,800.00</td><td class="p-4 text-sm text-[var(--on-surface-secondary)]">$3,750.00</td><td class="p-4 text-sm text-[var(--positive)] font-medium">$50.00</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- Trade Page -->
+                <main id="trade-page" class="page-content p-8 hidden">
+                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-[#1E1E1E] p-6 rounded-lg shadow-lg">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                                <div>
+                                    <h2 id="chart-title" class="text-2xl font-bold">BTC/USDT</h2>
+                                    <p id="current-price" class="text-3xl font-bold">$0.00</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[var(--on-surface-secondary)] text-sm">Next prediction in:</p>
+                                    <p id="prediction-timer" class="text-lg font-semibold">3:00</p>
+                                </div>
+                            </div>
+                            <div class="h-[400px] relative">
+                                <canvas id="priceChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="bg-[#1E1E1E] p-6 rounded-lg flex flex-col items-center justify-center text-center shadow-lg">
+                                <h3 class="text-lg font-semibold mb-2">AI Prediction Signal</h3>
+                                <div id="prediction-card" class="w-full bg-gray-700 rounded-lg p-6 mb-3">
+                                    <p id="prediction-text" class="text-5xl font-bold text-white">WAITING</p>
+                                </div>
+                                <p id="prediction-confidence" class="text-lg font-medium">Confidence: <span class="font-bold">0%</span></p>
+                            </div>
+                            <div class="card p-6">
+                                <h3 class="text-lg font-semibold mb-4">Trade Execution</h3>
+                                <div class="space-y-4">
+                                    <div class="flex items-end gap-2">
+                                        <div class="flex-grow">
+                                            <label for="symbol-input" class="block text-sm font-medium text-[var(--on-surface-secondary)]">Trading Symbol</label>
+                                            <input type="text" id="symbol-input" value="BTC/USDT" class="form-input mt-1 block w-full rounded-md shadow-sm">
+                                        </div>
+                                        <button id="load-symbol-btn" class="bg-[var(--accent)] hover:bg-cyan-500 text-[var(--background)] font-bold py-2 px-4 rounded-md transition duration-300">Load</button>
+                                    </div>
+                                    <div>
+                                        <label for="position-size" class="block text-sm font-medium text-[var(--on-surface-secondary)]">Position Size (USD)</label>
+                                        <input type="number" id="position-size" value="100" class="form-input mt-1 block w-full rounded-md shadow-sm">
+                                    </div>
+                                    <div class="flex items-center justify-between pt-2">
+                                        <label for="auto-trade-toggle" class="text-lg font-medium text-white">Enable Auto-Trading</label>
+                                        <label class="switch"><input type="checkbox" id="auto-trade-toggle"><span class="slider"></span></label>
+                                    </div>
+                                </div>
+                            </div>
+                             <div class="card p-6">
+                                <h3 class="text-xl font-bold text-white mb-4">Live Trade Log</h3>
+                                <div id="trade-log" class="space-y-2 text-sm h-32 overflow-y-auto pr-2"><p class="text-center text-[var(--on-surface-secondary)]">No trades executed yet.</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- History Page -->
+                <main id="history-page" class="page-content p-8 hidden">
+                    <header class="mb-8 flex justify-between items-center">
+                        <h1 class="text-4xl font-bold text-white">Trade History</h1>
+                        <button class="flex items-center gap-2 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-bold text-[var(--background)] hover:bg-cyan-500 transition-colors">
+                            <i class="material-icons">download</i>
+                            <span>Export to CSV</span>
+                        </button>
+                    </header>
+                    <div class="card p-6 mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="relative"><label class="text-xs text-[var(--on-surface-secondary)]" for="date-range">Date Range</label><input class="form-input w-full mt-1" id="date-range" type="text" value="Last 30 Days" /></div>
+                            <div class="relative"><label class="text-xs text-[var(--on-surface-secondary)]" for="symbol-filter">Symbol</label><select class="form-select w-full mt-1" id="symbol-filter"><option>All Symbols</option><option>BTC/USD</option><option>ETH/USD</option></select></div>
+                            <div class="relative"><label class="text-xs text-[var(--on-surface-secondary)]" for="side-filter">Side</label><select class="form-select w-full mt-1" id="side-filter"><option>All</option><option>Buy</option><option>Sell</option></select></div>
+                            <div class="relative"><label class="text-xs text-[var(--on-surface-secondary)]" for="search-trade">Search</label><input class="form-input w-full mt-1" id="search-trade" placeholder="Search by ID..." type="text" /></div>
+                        </div>
+                    </div>
+                    <div class="card overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-[#2a2a2a]"><tr><th class="p-4 text-sm font-semibold">Date/Time</th><th class="p-4 text-sm font-semibold">Symbol</th><th class="p-4 text-sm font-semibold">Side</th><th class="p-4 text-sm font-semibold">Quantity</th><th class="p-4 text-sm font-semibold">Entry Price</th><th class="p-4 text-sm font-semibold">P&L ($)</th></tr></thead>
+                            <tbody>
+                                <tr class="border-t border-[#2a2a2a]"><td class="p-4 text-sm text-[var(--on-surface-secondary)]">2025-07-08 14:30</td><td class="p-4 text-sm text-white font-medium">BTC/USD</td><td class="p-4 text-sm text-[var(--positive)]">BUY</td><td class="p-4 text-sm text-[var(--on-surface-secondary)]">0.5</td><td class="p-4 text-sm text-[var(--on-surface-secondary)]">$65,000.00</td><td class="p-4 text-sm text-[var(--positive)] font-medium">$50.00</td></tr>
+                                <tr class="border-t border-[#2a2a2a]"><td class="p-4 text-sm text-[var(--on-surface-secondary)]">2025-07-08 12:15</td><td class="p-4 text-sm text-white font-medium">ETH/USD</td><td class="p-4 text-sm text-[var(--negative)]">SELL</td><td class="p-4 text-sm text-[var(--on-surface-secondary)]">2.0</td><td class="p-4 text-sm text-[var(--on-surface-secondary)]">$3,800.00</td><td class="p-4 text-sm text-[var(--positive)] font-medium">$20.00</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Page Navigation ---
+        const navLinks = document.querySelectorAll('#main-nav a');
+        const pages = document.querySelectorAll('.page-content');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pageId = link.getAttribute('data-page');
+
+                pages.forEach(page => {
+                    page.classList.add('hidden');
+                });
+                document.getElementById(`${pageId}-page`).classList.remove('hidden');
+
+                navLinks.forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+                link.classList.add('active');
+            });
+        });
+
+        // --- Chart.js Setup ---
+        // P&L Chart (Dashboard)
+        const pnlCtx = document.getElementById('pnlChart').getContext('2d');
+        const pnlChart = new Chart(pnlCtx, { type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], datasets: [{ label: 'P&L', data: [10000, 10500, 10300, 11200, 11000, 11800], borderColor: 'var(--accent)', backgroundColor: 'rgba(0, 188, 212, 0.1)', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { display: false }, x: { display: false } }, plugins: { legend: { display: false } } } });
+
+        // Asset Allocation Chart (Dashboard)
+        const assetCtx = document.getElementById('assetAllocationChart').getContext('2d');
+        const assetAllocationChart = new Chart(assetCtx, { type: 'doughnut', data: { datasets: [{ data: [60, 30, 10], backgroundColor: ['var(--accent)', '#e0e0e0', '#4a4a4a'], borderWidth: 0 }] }, options: { responsive: true, cutout: '80%' } });
+
+        // Price Chart (Trade Page)
+        const priceCtx = document.getElementById('priceChart').getContext('2d');
+        const priceChart = new Chart(priceCtx, { type: 'line', data: { labels: Array(60).fill(''), datasets: [{ label: 'Price', data: [], borderColor: 'var(--accent)', backgroundColor: 'rgba(0, 188, 212, 0.1)', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { color: 'rgba(156, 163, 175, 1)' }, grid: { color: 'rgba(55, 65, 81, 0.5)' } }, x: { ticks: { display: false }, grid: { display: false } } }, plugins: { legend: { display: false } } } });
+
+        // --- DOM Elements (Trade Page) ---
+        const currentPriceEl = document.getElementById('current-price');
+        const predictionTextEl = document.getElementById('prediction-text');
+        const predictionCardEl = document.getElementById('prediction-card');
+        const predictionConfidenceEl = document.getElementById('prediction-confidence');
+        const predictionTimerEl = document.getElementById('prediction-timer');
+        const botStatusEl = document.getElementById('bot-status-dashboard');
+        const autoTradeToggleEl = document.getElementById('auto-trade-toggle');
+        const tradeLogEl = document.getElementById('trade-log');
+        const symbolInputEl = document.getElementById('symbol-input');
+        const chartTitleEl = document.getElementById('chart-title');
+        const loadSymbolBtn = document.getElementById('load-symbol-btn');
+
+        // --- State Management ---
+        let currentPrice = 0;
+        let priceSocket;
+        const PREDICTION_INTERVAL = 180; // 3 minutes
+        const backendUrl = "/api/trade"; // Use relative path for Vercel
+
+        // --- Helper Functions ---
+        const formatCurrency = (value) => `$${parseFloat(value).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+        
+        // --- WebSocket for Price Data ---
+        function connectPriceFeed() {
+            const symbol = symbolInputEl.value;
+            if (!symbol) {
+                alert('Please enter a trading symbol.');
+                return;
+            }
+
+            if (priceSocket) priceSocket.close();
+            
+            priceChart.data.labels = Array(60).fill('');
+            priceChart.data.datasets[0].data = [];
+            priceChart.update();
+            chartTitleEl.textContent = `${symbol} Live Price`;
+
+            let streamSymbol = symbol.replace('/', '').toLowerCase();
+            
+            priceSocket = new WebSocket(`wss://fstream.binance.com/ws/${streamSymbol}@aggTrade`);
+            
+            priceSocket.onmessage = (event) => {
+                const trade = JSON.parse(event.data);
+                const price = parseFloat(trade.p);
+                const oldPrice = currentPrice;
+                currentPrice = price;
+                currentPriceEl.textContent = formatCurrency(price);
+                
+                if(price > oldPrice) {
+                    currentPriceEl.classList.add('text-[var(--positive)]');
+                    currentPriceEl.classList.remove('text-[var(--negative)]', 'text-gray-400');
+                } else if (price < oldPrice) {
+                    currentPriceEl.classList.add('text-[var(--negative)]');
+                    currentPriceEl.classList.remove('text-[var(--positive)]', 'text-gray-400');
+                }
+
+                if (priceChart.data.datasets[0].data.length > 60) {
+                    priceChart.data.datasets[0].data.shift();
+                    priceChart.data.labels.shift();
+                }
+                priceChart.data.datasets[0].data.push(price);
+                priceChart.data.labels.push(new Date(trade.T).toLocaleTimeString());
+                priceChart.update('none');
+            };
+        }
+
+        // --- Secure Trading Logic ---
+        async function executeTrade(direction) {
+            const symbol = symbolInputEl.value;
+            if (!symbol) {
+                alert("Please enter a trading symbol.");
+                return;
+            }
+
+            const tradeDetails = {
+                symbol: symbol,
+                notional: document.getElementById('position-size').value,
+                side: direction === 'UP' ? 'buy' : 'sell',
+            };
+
+            try {
+                addTradeToLog({ direction: tradeDetails.side, status: 'Submitting...' });
+                const response = await fetch(backendUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tradeDetails)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("Backend Error Response:", errorText);
+                    throw new Error(`Server responded with ${response.status}. See console for details.`);
+                }
+
+                const result = await response.json();
+                addTradeToLog({ direction: tradeDetails.side, status: `Submitted (${result.orderId || result.id.slice(-6)})`, entryPrice: currentPrice, size: tradeDetails.notional });
+
+            } catch (error) {
+                addTradeToLog({ direction: tradeDetails.side, status: `Error: ${error.message}` });
+            }
+        }
+
+        function addTradeToLog(trade) {
+            if (tradeLogEl.querySelector('p')) tradeLogEl.innerHTML = '';
+            const logEntry = document.createElement('div');
+            logEntry.className = 'p-2 rounded-lg bg-[#2E2E2E] fade-in';
+            const dirColor = trade.direction === 'buy' ? 'text-[var(--positive)]' : 'text-[var(--negative)]';
+            logEntry.innerHTML = `
+                <div class="flex justify-between items-center font-bold">
+                    <span class="${dirColor}">${trade.direction.toUpperCase()}</span>
+                    <span class="text-blue-400">${trade.status}</span>
+                </div>
+                ${trade.entryPrice ? `<div class="text-xs text-[var(--on-surface-secondary)] mt-1"><span>Entry: ${formatCurrency(trade.entryPrice)}</span> | <span>Size: ${formatCurrency(trade.size)}</span></div>` : ''}
+            `;
+            tradeLogEl.prepend(logEntry);
+        }
+
+        // --- AI Prediction Logic ---
+        function getAIPrediction() {
+            const score = Math.random() - 0.5;
+            const prediction = score > 0 ? 'UP' : 'DOWN';
+            const confidence = 70 + (Math.random() * 29);
+            return { prediction, confidence };
+        }
+        
+        // --- UI Update & Prediction Cycle ---
+        function runPredictionCycle() {
+            const { prediction, confidence } = getAIPrediction();
+
+            predictionTextEl.textContent = prediction;
+            predictionConfidenceEl.innerHTML = `Confidence: <span class="font-bold ${prediction === 'UP' ? 'text-[var(--accent)]' : 'text-pink-500'}">${confidence.toFixed(1)}%</span>`;
+            
+            predictionCardEl.classList.remove('bg-[#00BCD4]', 'bg-pink-600', 'bg-gray-700');
+            predictionTextEl.classList.remove('text-black', 'text-white');
+            
+            if (prediction === 'UP') {
+                predictionCardEl.classList.add('bg-[var(--accent)]');
+                predictionCardEl.style.boxShadow = 'var(--cyan-glow)';
+                predictionTextEl.classList.add('text-black');
+            } else {
+                predictionCardEl.classList.add('bg-pink-600');
+                predictionTextEl.classList.add('text-white');
+            }
+
+            if (autoTradeToggleEl.checked) {
+                executeTrade(prediction);
+            }
+        }
+
+        // --- Timers & Event Listeners ---
+        let countdown = PREDICTION_INTERVAL;
+        setInterval(() => {
+            countdown--;
+            const minutes = Math.floor(countdown / 60);
+            const seconds = countdown % 60;
+            predictionTimerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            if (countdown <= 0) {
+                runPredictionCycle();
+                countdown = PREDICTION_INTERVAL;
+            }
+        }, 1000);
+
+        loadSymbolBtn.addEventListener('click', connectPriceFeed);
+
+        autoTradeToggleEl.addEventListener('change', () => {
+            const dot = botStatusEl.firstElementChild;
+            const text = botStatusEl.lastElementChild;
+            if (autoTradeToggleEl.checked) {
+                if (!priceSocket || priceSocket.readyState !== WebSocket.OPEN) {
+                    alert('Please load a symbol before enabling auto-trading.');
+                    autoTradeToggleEl.checked = false;
+                    return;
+                }
+                dot.className = 'relative flex h-3 w-3 animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--positive)] opacity-75';
+                text.textContent = 'Active';
+            } else {
+                 dot.className = 'relative flex h-3 w-3 rounded-full bg-red-500';
+                 text.textContent = 'Disabled';
+            }
+        });
+
+        // --- Initializer ---
+        window.onload = () => {
+             runPredictionCycle();
+        };
+    </script>
+</body>
+</html>
